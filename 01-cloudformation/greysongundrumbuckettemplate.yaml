@@ -2,3 +2,10 @@
   Resources:
     ggS3Bucket:
       Type: 'AWS::S3::Bucket'
+      Properties:
+        BucketName: !Ref nameofthebucket
+
+  Parameters:
+    nameofthebucket:
+      Type: String
+      Default: greysongundrumdefaultbucketname
