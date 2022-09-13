@@ -1,0 +1,4 @@
+  Description: 'Create a bucket for lab 1.1.1'
+  Resources:
+    ggS3Bucket:
+      Type: 'AWS::S3::Bucket'
