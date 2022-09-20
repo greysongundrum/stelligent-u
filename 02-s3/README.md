@@ -105,6 +105,10 @@ Using "aws s3", create a bucket:
 
 - List the contents of the bucket.
 
+aws s3api create-bucket --bucket stelligent-u-greyson-gundrum-labs-bucket --region=us-west-2 --create-bucket-configuration LocationConstraint=us-west-2
+export BUCKET=stelligent-u-greyson-gundrum-labs-bucket
+aws s3 ls $BUCKET
+
 #### Lab 2.1.2: Upload Objects to a Bucket
 
 Add an object to your bucket:
@@ -117,18 +121,32 @@ Add an object to your bucket:
 
 - List the contents of the bucket after each upload.
 
+mkdir data
+cd data
+touch data1 data2 data3
+export BUCKET=stelligent-u-greyson-gundrum-labs-bucket
+aws s3 sync data s3://$BUCKET
+touch data4 
+aws s3 cp data4 $BUCKET 
+
 ##### Question: Copying to Top Level
 
 _How would you copy the contents of the directory to the top level of your bucket?_
+
+aws s3 sync data s3://$BUCKET
 
 ##### Question: Directory Copying
 
 _How would you copy the contents and include the directory name in the s3 object
 paths?_
 
+aws s3 sync data s3://$BUCKET/data/
+
 ##### Question: Object Access
 
 _[Can anyone else see your file yet](https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html)?_
+
+No by default S3 bucket objects are private.
 
 For further reading, see the S3 [Access Policy Language Overview](https://docs.aws.amazon.com/AmazonS3/latest/dev/access-policy-language-overview.html).
 
@@ -136,20 +154,47 @@ For further reading, see the S3 [Access Policy Language Overview](https://docs.a
 
 _What makes "sync" a better choice than "cp" for some S3 uploads?_
 
+Sync will upload directories while cp while only upload files. 
+
 #### Lab 2.1.3: Exclude Private Objects When Uploading to a Bucket
 
 Add a private file to your data directory. Then, upload the directory to your
 bucket again **without including the private file**.
 
 - Verify after uploading that the file doesn't exist in the bucket.
+greyson.gundrum@MACUSSTG2541764 theotherdata % aws s3 sync ~/./theotherdata s3://$BUCKET --exclude *.private
+greyson.gundrum@MACUSSTG2541764 theotherdata % aws s3 ls s3://$BUCKET                                       
+                           PRE 34rfsdfv/
+                           PRE data/
+2022-09-13 17:49:58          0 data1
+2022-09-13 17:49:58          0 data2
+2022-09-13 17:49:58          0 data3
+2022-09-13 17:55:20          0 data4
+greyson.gundrum@MACUSSTG2541764 theotherdata % ls
+data.private    data1           data2           data3           data4           direct1
 
 - Did you find two different ways to accomplish this task? If not, make sure to
   read the [documentation on sync flags](https://docs.aws.amazon.com/cli/latest/reference/s3/sync.html).
+
+greyson.gundrum@MACUSSTG2541764 theotherdata % touch data
+greyson.gundrum@MACUSSTG2541764 theotherdata % aws s3 ls s3://$BUCKET                                                       
+                           PRE 34rfsdfv/
+                           PRE data/
+2022-09-13 17:49:58          0 data1
+2022-09-13 17:49:58          0 data2
+2022-09-13 17:49:58          0 data3
+2022-09-13 17:55:20          0 data4
+greyson.gundrum@MACUSSTG2541764 theotherdata % touch data5
+greyson.gundrum@MACUSSTG2541764 theotherdata % aws s3 sync ~/./theotherdata s3://$BUCKET --exclude "*" --include "data[1-5]"
+upload: ./data5 to s3://stelligent-u-greyson-gundrum-labs-bucket/data5
 
 #### Lab 2.1.4: Clean Up
 
 Clean up: remove your bucket. What do you have to do before you can
 remove it?
+
+You have to remove all objects from the bucket to remove the bucket. 
+aws s3 rb s3://bucket-name --force  
 
 ### Retrospective 2.1
 
@@ -175,16 +220,31 @@ directory with the "aws s3 sync" command.
 - Use a "sync" command parameter to make all the files in the bucket
   publicly readable.
 
+  aws s3 sync ~/./theotherdata/data.private s3://$BUCKET --acl public-read
+
 ##### Question: Downloading Protection
 
 _After this, can you download one of your files from the bucket without using
 your API credentials?_
+
+Yes
+
+greyson.gundrum@MACUSSTG2541764 /tmp % curl https://s3.us-west-2.amazonaws.com/stelligent-u-greyson-gundrum-labs-bucket/data.private --output data.private
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100    54  100    54    0     0    202      0 --:--:-- --:--:-- --:--:--   207
+greyson.gundrum@MACUSSTG2541764 /tmp % cat ./data.private 
+I AM VERY PRIVATE DATA AND YOU MADE ME PUBLICWOOOOOOO
+greyson.gundrum@MACUSSTG2541764 /tmp % pwd
+/tmp
 
 #### Lab 2.2.2: Use the CLI to Restrict Access to Private Data
 
 You just made "private.txt" publicly readable. Ensure that only the
 bucket owner can read or write that file without changing the
 permissions of the other files.
+
+aws s3api put-object-acl --bucket $BUCKET --key data.private --acl bucket-owner-full-control
 
 ##### Question: Modify Permissions
 
@@ -193,9 +253,19 @@ permissions on the file?_
 
 (Hint: see the list of [Canned ACLs](https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl).)
 
+aws s3 cp ~/theotherdata/data.private s3://$BUCKET --acl public-read     
+
+
 ##### Question: Changing Permissions
 
 _Is there a way you can change the permissions on the file without re-uploading it?_
+
+aws s3api put-object-acl --bucket $BUCKET --key data.private --acl bucket-owner-full-control
+
+OR
+
+aws s3 cp s3://$BUCKET/data.private s3://$BUCKET --acl public-read
+(Technically not "re-uploading")
 
 #### Lab 2.2.3: Using the API from the CLI
 
@@ -284,20 +354,30 @@ this lab:
 
 - Inspect your bucket's objects after syncing and see how many
   versions there are.
+aws s3api list-object-versions --bucket $BUCKET
 
 - Fetch the original version of an object.
+
+aws s3api get-object --bucket $BUCKET --key data3 --version-id=f6WTmNADOB8u2yqGwheW16BDfpCdpDlm olddata3.txt 
 
 #### Lab 2.3.2: Object Versions
 
 Delete one of the objects that you changed.
 
+aws s3 rm s3://$BUCKET/data1    
+
 ##### Question: Deleted Object Versions
 
 _Can you still retrieve old versions of the object you removed?_
 
+Yes
+
 ##### Question: Deleting All Versions
 
 _How would you delete all versions?_
+
+aws s3api delete-objects --bucket $BUCKET --delete "$(aws s3api list-object-versions --bucket $BUCKET --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}')" 
+aws s3api delete-objects --bucket $BUCKET --delete "$(aws s3api list-object-versions --bucket $BUCKET --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')"
 
 #### Lab 2.3.3: Tagging S3 Resources
 
@@ -305,10 +385,14 @@ Tag one or more of your objects or buckets using "aws s3api", or add
 tags to your bucket through CloudFormation. View the tags on them
 through the CLI or the console.
 
+aws s3api get-bucket-tagging --bucket $BUCKET
+
 ##### Question: Deleting Tags
 
 _Can you change a single tag on a bucket or object, or do you have to change
 all its tags at once?_
+
+You have to change all the tags at once using the cli command put-bucket-tagging it will overwrite the whole list. 
 
 (See `aws:cloudformation:stack-id` and other AWS-managed tags.)
 
@@ -331,6 +415,10 @@ _Management Lifecycle_ tab to double-check your settings.
 
 _Can you make any of these transitions more quickly?_
 
+You can move the files to glacier immiedately, but you have to wait 30 days to move it to IA. 
+
+If you move the files to IA then to Glacier you will start incur a 30day storing feed for the files. 
+
 *See the [S3 lifecycle transitions doc](https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-transition-general-considerations.html).*
 
 ### Stretch Challenge
@@ -343,6 +431,10 @@ expire them after 1 day.
 *How could the lifecycle and versioning features of S3 be used to manage
 the lifecycle of a web application? Would you use those features to manage
 the webapp code itself, or just the app's data?*
+
+I would use S3 as a way to contain some of the app's bigger data portions. Using versioning you could roll back if something
+ever was to be corrupted, or if something was accidentally deleted. I would use an actual VCS to manage the webapp's code
+itself, and not S3. 
 
 ## Lesson 2.4: S3 Object Encryption
 
