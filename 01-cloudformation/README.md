@@ -149,7 +149,17 @@ name.
 
 - Try to delete the Stack using the AWS CLI. What happens?
 
+greyson.gundrum@MACUSSTG2541764 01-cloudformation % aws cloudformation delete-stack --stack-name greysongundrumbucketstack                                                 
+
+An error occurred (ValidationError) when calling the DeleteStack operation: Stack [greysongundrumbucketstack] cannot be deleted while TerminationProtection is enabled
+
 - Remove termination protection and try again.
+
+greyson.gundrum@MACUSSTG2541764 01-cloudformation % aws cloudformation update-termination-protection --stack-name greysongundrumbucketstack --no-enable-termination-protection
+{
+    "StackId": "arn:aws:cloudformation:us-west-1:324320755747:stack/greysongundrumbucketstack/f2a94000-39dc-11ed-9d4e-020c9f3a12ad"
+}
+greyson.gundrum@MACUSSTG2541764 01-cloudformation % aws cloudformation delete-stack --stack-name greysongundrumbucketstack   
 
 - List the S3 buckets in both regions once this lesson's Stacks have been
   deleted to ensure their removal.
@@ -160,6 +170,8 @@ name.
 
 _Why do we prefer the YAML format for CFN templates?_
 
+YAML is more readable, and gets the same confguration completed with less characters and line. 
+
 #### Question: Protecting Resources
 
 _What else can you do to prevent resources in a stack from being deleted?_
@@ -167,6 +179,8 @@ _What else can you do to prevent resources in a stack from being deleted?_
 See [DeletionPolicy](https://aws.amazon.com/premiumsupport/knowledge-center/cloudformation-accidental-updates/).
 
 _How is that different from applying Termination Protection?_
+
+Termination protection will prevent all resources in the stack from being deleted. Termination protection is more of a blanket policy while the deletion policy is per resource. 
 
 #### Task: String Substitution
 
@@ -201,6 +215,8 @@ IAM Managed Policy that controls that user.
 
 - Create the Stack.
 
+aws cloudformation create-stack --stack-name greysongundrumlab123 --template-body file://lab1.2.3.yaml --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --parameters ParameterKey=S3User,ParameterValue=parauser
+
 #### Lab 1.2.2: Exposing Resource Details via Exports
 
 Update the template by adding a CFN Output that exports the Managed
@@ -221,11 +237,20 @@ the Managed Policy ARN created by and exported from the previous Stack.
 - [List all the Stack Imports](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/list-imports.html)
   in that stack's region.
 
+  greyson.gundrum@MACUSSTG2541764 01-cloudformation % aws cloudformation list-imports --export-name DisplayArn
+{
+    "Imports": [
+        "greysongundrumlab123"
+    ]
+}
+
 #### Lab 1.2.4: Import/Export Dependencies
 
 Delete your CFN stacks in the same order you created them in. Did you
 succeed? If not, describe how you would _identify_ the problem, and
 resolve it yourself.
+
+I would go to the console and see why my stack is not deleting. Then I would delete the most recent stack and then the older stack.
 
 ### Retrospective 1.2
 
@@ -233,6 +258,7 @@ resolve it yourself.
 
 Show how to use the IAM policy tester to demonstrate that the user
 cannot perform 'Put' actions on any S3 buckets.
+
 
 #### Task: SSM Parameter Store
 
