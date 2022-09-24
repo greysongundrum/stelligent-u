@@ -1,4 +1,4 @@
-Description: Creating IAM resource for lab 3.1.1
+Description: Creating IAM resources for lab 3.1.3
 Resources:
   IAMReadonly:
     Type: AWS::IAM::Role
