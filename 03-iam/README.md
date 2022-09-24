@@ -120,12 +120,14 @@ policy:
 - Attach the customer managed policy resource to the new role.
 
 - Be sure that you're not referencing an AWS managed policy in the
-  role.
+  role. 
 
 - Add/Update the Description of the customer managed policy to
   indicate the re-use of the policy.
 
 - Update the Stack. *Did the stack update work?*
+
+Yes the update worked great. 
 
   - Query the stack to determine its state.
   - If the stack update was not successful,
