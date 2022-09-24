@@ -1,0 +1,25 @@
+Description: Creating IAM resource for lab 3.1.1
+Resources:
+  IAMReadonly:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: InlinePolicyForIAMRead
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'IAM:Describe*'
+                  - 'IAM:List*'
+                  - 'IAM:Get*'
+                Resource: '*'

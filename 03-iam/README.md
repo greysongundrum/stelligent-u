@@ -92,6 +92,11 @@ Create a CFN template that specifies an IAM Role.
   - List all the Roles
   - Describe the specific Role your Stack created.
 
+aws iam list-roles
+aws iam list-roles --region us-west-1  
+aws iam list-roles --region us-west-1 | grep -i IAMReadonly
+aws iam get-role --role-name greysongundrumlab311-IAMReadonly-1G2C9CVER7D5O
+
 #### Lab 3.1.2: Customer Managed Policy
 
 Update the template and the corresponding Stack to make the IAM Role's
@@ -139,21 +144,6 @@ Replace the customer managed policy with
   Read permissions to the EC2 service.
 
 - Update the stack.
-
-#### Lab 3.1.5: Policy Simulator
-
-Read about the [AWS Policy Simulator](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_testing-policies.html)
-tool and practice using it.
-
-- Using the two roles in your stack, simulate the ability of each role
-  to perform the following actions (using the AWS CLI):
-
-  - `iam:CreateRole`
-  - `iam:ListRoles`
-  - `iam:SimulatePrincipalPolicy`
-  - `ec2:DescribeImages`
-  - `ec2:RunInstances`
-  - `ec2:DescribeSecurityGroups`
 
 #### Lab 3.1.6: Clean Up
 
