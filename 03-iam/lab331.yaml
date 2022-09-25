@@ -1,0 +1,48 @@
+Description: Creating IAM resources for lab 3.3.1
+Resources:
+  IAMReadonly:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: 
+              AWS: 
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/greyson.gundrum.labs'
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: SuperBucketAdmin
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: !Sub 'arn:aws:s3:::bucketundermycontrol1'
+        - PolicyName: ReadOnlyBucket
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:Get*'
+                  - 's3:List*'
+                  - 's3-object-lambda:Get*'
+                  - 's3-object-lambda:List*'
+                Resource: !Sub 'arn:aws:s3:::bucketundermycontrol2'
+  bucketundermycontrol1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: bucketundermycontrol1
+  bucketundermycontrol2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: bucketundermycontrol2
+
+Outputs:
+  RoleArn:
+    Value: !Ref IAMReadonly
+    Export:
+      Name: IAMREADONLYARN
