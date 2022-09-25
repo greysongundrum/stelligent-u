@@ -221,6 +221,9 @@ Test the capabilities of this new Role.
   - Did it succeed? It should not have!
   - If it succeeded, troubleshoot how Read access allowed the role
     to create a bucket.
+greyson.gundrum@MACUSSTG2541764 03-iam % aws s3api create-bucket --bucket stelligent-u-greyson-gundrum-labs-bucket --region=us-west-2 --create-bucket-configuration LocationConstraint=us-west-2
+
+An error occurred (AccessDenied) when calling the CreateBucket operation: Access Denied
 
 #### Lab 3.2.3: Add privileges to the role
 

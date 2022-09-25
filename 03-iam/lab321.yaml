@@ -1,0 +1,17 @@
+Description: Creating IAM resources for lab 3.2.1
+Resources:
+  IAMReadonly:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: 
+              AWS: 
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:user/greyson.gundrum.labs'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/IAMReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
