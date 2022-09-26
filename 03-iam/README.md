@@ -317,7 +317,11 @@ read-only access to the other.
 
 *Were there any errors? If so, take note of them.*
 
+Yes, it appears as if you can not have two policies. They last one overrides the first one. 
+
 *What were the results you expected, based on the role's policy?*
+
+I had expected to have full control of one bucket and read only on the other bucket. 
 
 #### Lab 3.3.3: Conditional restrictions
 
