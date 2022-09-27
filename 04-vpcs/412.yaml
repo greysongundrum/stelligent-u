@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creating cloudformation resources for lab 4.1.1
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      Tags:
+      - Key: user
+        Value: greyson.gundrum.labs
+      - Key: stelligent-u-lesson
+        Value: 4
+      - Key: stelligent-u-lab
+        Value: 411
+  SubnetSixteen:
+    Type: AWS::EC2::Subnet
+    Properties: 
+      CidrBlock: 10.0.0.0/24
+      VpcId: !Ref VPC
+      Tags:
+      - Key: user
+        Value: greyson.gundrum.labs
+      - Key: stelligent-u-lesson
+        Value: 4
+      - Key: stelligent-u-lab
+        Value: 411
+  VPCIG:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: user
+        Value: greyson.gundrum.labs
+      - Key: stelligent-u-lesson
+        Value: 4
+      - Key: stelligent-u-lab
+        Value: 411
+  IGAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref VPCIG
+  RT:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: user
+        Value: greyson.gundrum.labs
+      - Key: stelligent-u-lesson
+        Value: 4
+      - Key: stelligent-u-lab
+        Value: 411
+  Route2IG:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RT
+      GatewayId: !Ref VPCIG
+      DestinationCidrBlock: 0.0.0.0/0
+  RT2SAttach:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetSixteen
+      RouteTableId: !Ref RT
+
+
+Outputs:
+  VPCID:
+    Description: VPC ID for lab 411
+    Value: !Ref VPC
+  SubnetID:
+    Description: Subnet ID For 411
+    Value: !Ref SubnetSixteen
+Parameters:
+  VPCCidrBlock:
+    Type: String
+    Default: 10.0.0.100/16
+    Description: Network address and CIDR in 0.0.0.0/0 format. 
