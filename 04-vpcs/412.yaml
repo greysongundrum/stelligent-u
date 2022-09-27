@@ -4,7 +4,7 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.0.0.0/16
+      CidrBlock: !Ref VPCCidrBlock
       Tags:
       - Key: user
         Value: greyson.gundrum.labs
@@ -67,9 +67,13 @@ Outputs:
   VPCID:
     Description: VPC ID for lab 411
     Value: !Ref VPC
+    Export: 
+      Name: !Sub "${AWS::StackName}-VPCID"
   SubnetID:
     Description: Subnet ID For 411
     Value: !Ref SubnetSixteen
+    Export:
+      Name: !Sub "${AWS::StackName}-SubnetID"
 Parameters:
   VPCCidrBlock:
     Type: String

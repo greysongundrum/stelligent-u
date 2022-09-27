@@ -1,0 +1,40 @@
+Description: Creating EC2 Resources for lab 4.1.4
+Resources:
+  EC2I1: 
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !ImportValue greysongundrum412-SubnetID
+      ImageId: !Ref ImageId
+      KeyName: !Ref KeyPair
+      InstanceType: !Ref Size
+      Tags:
+      - Key: user
+        Value: greyson.gundrum.labs
+      - Key: stelligent-u-lesson
+        Value: 4
+      - Key: stelligent-u-lab
+        Value: 411
+Parameters:
+  ImageId:
+    Type: String
+    Default: ami-09208e69ff3feb1db
+    Description: Most recent Linxu Amazon AMI
+  Size:
+    Type: String
+    Default: t2.micro
+    Description: Smallest type of instance for cheapest price
+  KeyPair:
+    Type: String
+    Default: greysongundrumkeypair413
+    Description: Key pair for SSH access
+Outputs:
+  InstanceIP:
+    Description: The private IP address of the instance
+    Value: !GetAtt EC2I1.PrivateIp
+    Export: 
+      Name: !Sub "${AWS::StackName}-SubnetID"
+  InstanceID:
+    Description: The ID of the Instance for reference when using other resources
+    Value: !Ref EC2I1
+    Export:
+      Name: !Sub "${AWS::StackName}-InstanceID"
