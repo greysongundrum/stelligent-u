@@ -7,6 +7,7 @@ Resources:
       ImageId: !Ref ImageId
       KeyName: !Ref KeyPair
       InstanceType: !Ref Size
+      SecurityGroupIds: [!Ref PingSG]
       Tags:
       - Key: user
         Value: greyson.gundrum.labs
@@ -14,6 +15,27 @@ Resources:
         Value: 4
       - Key: stelligent-u-lab
         Value: 411
+  PingSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows ping to an EC2 Instance
+      VpcId: !ImportValue greysongundrum412-VPCID
+      SecurityGroupIngress:
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+      - Key: user
+        Value: greyson.gundrum.labs
+      - Key: stelligent-u-lesson
+        Value: 4
+      - Key: stelligent-u-lab
+        Value: 411
+  EIP:
+    Type: AWS::EC2::EIP
+    Properties: 
+      InstanceId: !Ref EC2I1
 Parameters:
   ImageId:
     Type: String
@@ -38,3 +60,8 @@ Outputs:
     Value: !Ref EC2I1
     Export:
       Name: !Sub "${AWS::StackName}-InstanceID"
+  PublicEIP:
+    Description: IPv4 address of Elastic IP
+    Value: !Ref EIP
+    Export:
+      Name: !Sub "${AWS::StackName}-EIP"

@@ -152,6 +152,8 @@ Add a security group to your EC2 stack:
 
 _Can you ssh to your instance yet?_
 
+Still no public ip address. 
+
 #### Lab 4.1.6: Elastic IP
 
 Add an Elastic IP to your EC2 stack:
@@ -168,13 +170,20 @@ reachable from anywhere outside your VPC.
 
 _Can you ping your instance now?_
 
+Yes
+
+
 ##### Question: SSH
 
 _Can you ssh into your instance now?_
 
+No, no security group allowing SSH ingress. 
+
 ##### Question: Traffic
 
 _If you can ssh, can you send any traffic (e.g. curl) out to the Internet?_
+
+I can hit the server on it's public ip using netcat on ports 80 and 443. So it appears as yes the server could go out to the internet.
 
 At this point, you've made your public EC2 instance an [ssh bastion](https://docs.aws.amazon.com/quickstart/latest/linux-bastion/architecture.html).
 We'll make use of that to explore your network below.
