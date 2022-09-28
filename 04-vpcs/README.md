@@ -283,6 +283,8 @@ First, add one on the public subnet:
 
 _Can you still reach your EC2 instances?_
 
+You can reach the public one because we allowed my IP to reach it. We can not reach the private address because the NACL denies anything that is not my public IP.
+
 Add another ACL to your private subnet:
 
 - Only allow traffic from the public subnet.
