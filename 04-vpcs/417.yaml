@@ -23,7 +23,7 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: icmp
           FromPort: 8
-          ToPort: 0
+          ToPort: -1
           CidrIp: 0.0.0.0/0
         - IpProtocol: TCP
           FromPort: 22
@@ -117,21 +117,27 @@ Resources:
   InboundRule:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
-      NetworkAclId:
-        Ref: NACL1
+      NetworkAclId: !GetAtt NACL1.Id
+      RuleNumber: 1
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+  InboundRule:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !GetAtt NACL1.Id
       RuleNumber: 100
       Protocol: 6
       RuleAction: allow
-      CidrBlock: 
+      CidrBlock: 173.19.144.189/32
       PortRange:
         From: 22
         To: 22
   OutboundRule:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
-       NetworkAclId:
-         Ref: NACL1
-       RuleNumber: 100
+       NetworkAclId: !GetAtt NACL1.Id
+       RuleNumber: 200
        Protocol: -1
        Egress: true
        RuleAction: allow
@@ -139,7 +145,7 @@ Resources:
   NACL1ASC:
     Type: AWS::EC2::SubnetNetworkAclAssociation
     Properties: 
-      NetworkAclId: !Ref NACL1
+      NetworkAclId: !GetAtt NACL1.Id
       SubnetId: !ImportValue greysongundrum412-SubnetID
   NACL2:
     Type: AWS::EC2::NetworkAcl
@@ -155,9 +161,8 @@ Resources:
   Inbound4SSH:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
-      NetworkAclId:
-        Ref: NACL2
-      RuleNumber: 100
+      NetworkAclId: !GetAtt NACL2.Id
+      RuleNumber: 300
       Protocol: 6
       RuleAction: allow
       CidrBlock: 10.0.0.0/24
@@ -167,9 +172,8 @@ Resources:
   Inbound4HTTP:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
-      NetworkAclId:
-        Ref: NACL2
-      RuleNumber: 101
+      NetworkAclId: !GetAtt NACL2.Id
+      RuleNumber: 500
       Protocol: 6
       RuleAction: allow
       CidrBlock: 10.0.0.0/24
@@ -179,9 +183,8 @@ Resources:
   Inbound4ICMP:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
-      NetworkAclId:
-        Ref: NACL2
-      RuleNumber: 103
+      NetworkAclId: !GetAtt NACL2.Id
+      RuleNumber: 600
       Icmp:
         Code: -1
         Type: -1
@@ -191,9 +194,8 @@ Resources:
   OutboundLimit:
     Type: AWS::EC2::NetworkAclEntry
     Properties:
-      NetworkAclId:
-        Ref: NACL2
-      RuleNumber: 100
+      NetworkAclId: !GetAtt NACL2.Id
+      RuleNumber: 700
       Egress: true
       RuleAction: allow
       Protocol: -1
@@ -203,6 +205,7 @@ Resources:
     Properties: 
       NetworkAclId: !Ref NACL2
       SubnetId: !Ref NewSubnet
+
 Parameters:
   ImageId:
     Type: String
