@@ -257,7 +257,7 @@ Can you SSH into the instance?
   enabling SSH ingress on Port 22 from your IP and update the stack.
 
 Now can you SSH into your instance? If not, troubleshoot and fix the
-issue using your CFN template.
+issue using your CFN templa
 
 ### Retrospective 5.2
 
