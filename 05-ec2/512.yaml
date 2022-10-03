@@ -1,0 +1,35 @@
+Description: Creating EC2 resources for lab 5.1.2
+Resources:
+  DefaultLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateData: 
+        InstanceType: t2.micro
+        KeyName: greysongundrumkeypair512
+      LaunchTemplateName: greysongundrumLT512
+      VersionDescription: 1
+  WindowsInstance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DefaultLaunchTemplate
+        Version: 1
+      ImageId: ami-031b64cec4b201110
+      SubnetId: !Ref DefaultSubnet
+  LinuxInstance:
+    Type: AWS::EC2::Instance
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DefaultLaunchTemplate
+        Version: 1
+      ImageId: ami-02ea247e531eb3ce6
+      SubnetId: !Ref DefaultSubnet
+  DefaultVpc:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: 10.55.0.0/24
+  DefaultSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.55.0.0/24
+      VpcId: !Ref DefaultVpc
