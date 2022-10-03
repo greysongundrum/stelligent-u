@@ -29,3 +29,5 @@ __pycache__
 04-vpcs/scratch.txt
 common_commands.txt
 credentials
+../04-vpcs/example.json
+../04-vpcs/scratch
