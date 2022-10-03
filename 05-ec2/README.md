@@ -124,12 +124,15 @@ is created:
 Create the stack:
 
 - Write a script that uses the AWS CLI to launch the Stack and immediate
-  employs a [waiter](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/wait/index.html)
+  employs a [waiter]( https://docs.aws.amazon.com/cli/latest/reference/cloudformation/wait/index.html)
   so that the script exits only when the CFN service has finished creating the
   stack.
 
 - Use the AWS CLI to describe the stack's resources, then use the AWS
   CLI to describe each instance that was created.
+aws cloudformation list-stack-resources --stack-name greysongundrum$CURRENT_LAB | grep -i logical      
+aws cloudformation describe-stack-resource --stack-name greysongundrum$CURRENT_LAB --logical-resource-id LinuxInstance
+aws cloudformation describe-stack-resource --stack-name greysongundrum$CURRENT_LAB --logical-resource-id WindowsInstance
 
 #### Lab 5.1.3: Update Your Stack
 
@@ -140,6 +143,7 @@ Windows Server 2012 R2:
 
 - Query the stack's events using the AWS CLI. What happened to your
   original EC2 Windows instance?
+"ResourceStatusReason": "Requested update requires the creation of a new physical resource; hence creating one.",
 
 #### Lab 5.1.4: Teardown
 
@@ -148,6 +152,22 @@ and the instance being considered eliminated altogether.
 
 - Delete your Stack. Immediately after initiating Stack deletion, see
   if you can query your instance states.
+greyson.gundrum@MACUSSTG2541764 05-ec2 % aws  cloudformation stack-update-complete --stack-name greysongundrum$CURRENT_LAB
+greyson.gundrum@MACUSSTG2541764 05-ec2 % aws cloudformation describe-stack-resource --stack-name greysongundrum$CURRENT_LAB --logical-resource-id WindowsInstance
+{
+    "StackResourceDetail": {
+        "StackName": "greysongundrum512",
+        "StackId": "arn:aws:cloudformation:us-west-1:324320755747:stack/greysongundrum512/814dec20-4347-11ed-8f65-06e53c9739f3",
+        "LogicalResourceId": "WindowsInstance",
+        "PhysicalResourceId": "i-0817b03cc38d1e9bf",
+        "ResourceType": "AWS::EC2::Instance",
+        "LastUpdatedTimestamp": "2022-10-03T18:41:18.643000+00:00",
+        "ResourceStatus": "DELETE_IN_PROGRESS",
+        "Metadata": "{}",
+        "DriftInformation": {
+            "StackResourceDriftStatus": "NOT_CHECKED"
+        }
+    }
 
 ### Retrospective 5.1
 
