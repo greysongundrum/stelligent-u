@@ -133,10 +133,14 @@ Launch an EC2 instance into your VPC.
 
 _After you launch your new stack, can you ssh to the instance?_
 
+No, there is no public IP address associated with the box.
+
 ##### Question: Verify Connectivity
 
 _Is there a way that you can verify Internet connectivity from the instance
 without ssh'ing to it?_
+
+You can look at it's networking in the console and see that it doens't have a public IP so will not have access to the internet. You can also use netcat (nc -v $PUBLIC_IP 80,443)
 
 #### Lab 4.1.5: Security Group
 
@@ -147,6 +151,8 @@ Add a security group to your EC2 stack:
 ##### Question: Connectivity
 
 _Can you ssh to your instance yet?_
+
+Still no public ip address. 
 
 #### Lab 4.1.6: Elastic IP
 
@@ -164,13 +170,51 @@ reachable from anywhere outside your VPC.
 
 _Can you ping your instance now?_
 
+Yes
+
+greyson.gundrum@MACUSSTG2541764 04-vpcs % ping 54.183.5.247  
+PING 54.183.5.247 (54.183.5.247): 56 data bytes
+64 bytes from 54.183.5.247: icmp_seq=0 ttl=236 time=29.585 ms
+64 bytes from 54.183.5.247: icmp_seq=1 ttl=236 time=38.149 ms
+^C
+--- 54.183.5.247 ping statistics ---
+2 packets transmitted, 2 packets received, 0.0% packet loss
+round-trip min/avg/max/stddev = 29.585/33.867/38.149/4.282 ms
+
+
 ##### Question: SSH
 
 _Can you ssh into your instance now?_
 
+Yes
+
+greyson.gundrum@MACUSSTG2541764 04-vpcs % chmod 400 ./uswest1greysongundrum.pem 
+greyson.gundrum@MACUSSTG2541764 04-vpcs % ssh -i ./uswest1greysongundrum.pem root@54.183.5.247
+Please login as the user "ec2-user" rather than the user "root".
+
+
+^CConnection to 54.183.5.247 closed.
+greyson.gundrum@MACUSSTG2541764 04-vpcs % ssh -i ./uswest1greysongundrum.pem ec2-user@54.183.5.247
+
+       __|  __|_  )
+       _|  (     /   Amazon Linux 2 AMI
+      ___|\___|___|
+
+https://aws.amazon.com/amazon-linux-2/
+
+
 ##### Question: Traffic
 
 _If you can ssh, can you send any traffic (e.g. curl) out to the Internet?_
+
+Yes
+
+[ec2-user@ip-10-0-0-57 ~]$ curl google.com
+<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+<TITLE>301 Moved</TITLE></HEAD><BODY>
+<H1>301 Moved</H1>
+The document has moved
+<A HREF="http://www.google.com/">he
 
 At this point, you've made your public EC2 instance an [ssh bastion](https://docs.aws.amazon.com/quickstart/latest/linux-bastion/architecture.html).
 We'll make use of that to explore your network below.
@@ -200,14 +244,19 @@ existing instance stack.
 
 _Can you find a way to ssh to this instance?_
 
+Yes, you can SSH to the elastic IP on the first instance, and then SSH to the private instance. Given of course you have not put in too tight of security groups.
+
 ##### Question: Egress
 
 _If you can ssh to it, can you send traffic out?_
+Yes you can hit websites on the internet.
 
 ##### Question: Deleting the Gateway
 
 _If you delete the NAT gateway, what happens to the ssh session on your private
 instance?_
+
+You still stay connected via SSH but you can not hit anything on the internet.
 
 ##### Question: Recreating the Gateway
 
@@ -215,6 +264,8 @@ _If you recreate the NAT gateway and detach the Elastic IP from the public EC2
 instance, can you still reach the instance from the outside?_
 
 Test it out with the AWS console.
+
+Yes, using the reachability analyzer I could still hit my instance with a source from an elastic IP
 
 #### Lab 4.1.8: Network ACL
 
@@ -231,6 +282,8 @@ First, add one on the public subnet:
 ##### Question: EC2 Connection
 
 _Can you still reach your EC2 instances?_
+
+You can reach the public one because we allowed my IP to reach it. We can not reach the private address because the NACL denies anything that is not my public IP.
 
 Add another ACL to your private subnet:
 

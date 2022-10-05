@@ -1,0 +1,18 @@
+[
+    {
+        "ParameterKey":"ImageId",
+        "ParameterValue":"ami-09208e69ff3feb1db"
+    },
+    {
+        "ParameterKey": "Size",
+        "ParameterValue" : "t2.micro"
+    },
+    {
+        "ParameterKey": "KeyPair",
+        "ParameterValue": "greysongundrumkeypair413"
+    },
+    {
+        "ParameterKey":"VPCCidrBlock",
+        "ParameterValue":"10.0.222.0/16"
+    }
+  ]
