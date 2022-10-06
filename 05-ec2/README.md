@@ -334,6 +334,8 @@ Userdata docs to debug.
 Compare those same metrics with the values received from Lab 5.3.1.
 Record your results.
 
+After starting the instance I found a new namespace named CWAgent. This had new cloudwatch metrics under it that were not apart of the default EC2 per-instance metrics. 
+
 ##### Task: Private Subnet
 
 The default VPC has only public subnets that you launched into. Copy

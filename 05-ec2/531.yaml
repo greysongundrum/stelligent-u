@@ -9,14 +9,14 @@ Resources:
       LaunchTemplateName: greysongundrumLT512
       VersionDescription: 1
 
-  LinuxInstance:
+  LinuxInstanceInPrivateSubnet:
     Type: AWS::EC2::Instance
     Properties: 
       LaunchTemplate:
         LaunchTemplateId: !Ref DefaultLaunchTemplate
         Version: 1
       ImageId: ami-02ea247e531eb3ce6
-      SubnetId: !Ref DefaultSubnet
+      SubnetId: !Ref PrivateSubnet
       AvailabilityZone: us-west-1a
       IamInstanceProfile: !Ref MyInstanceProfile
       SecurityGroupIds: 
@@ -26,6 +26,43 @@ Resources:
           #!/bin/bash
           curl -o /tmp/amazon-cloudwatch-agent.deb https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
           dpkg -i -E /tmp/amazon-cloudwatch-agent.deb
+          amazon-cloudwatch-agent-ctl -a start
+
+  LinuxInstanceNoCloudWatchInstalled:
+    Type: AWS::EC2::Instance
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DefaultLaunchTemplate
+        Version: 1
+      ImageId: ami-02ea247e531eb3ce6
+      SubnetId: !Ref PublicSubnet
+      AvailabilityZone: us-west-1a
+      IamInstanceProfile: !Ref MyInstanceProfile
+      SecurityGroupIds: 
+         - !Ref PingSG
+
+  LinuxInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init: 
+        config: 
+          commands: 
+            curl_cloudwatch_agent:
+              command: curl -o /tmp/amazon-cloudwatch-agent.deb https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
+            install_package:
+              command: dpkg -i -E /tmp/amazon-cloudwatch-agent.deb
+            start_service:
+              command: amazon-cloudwatch-agent-ctl -a start
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DefaultLaunchTemplate
+        Version: 1
+      ImageId: ami-02ea247e531eb3ce6
+      SubnetId: !Ref PublicSubnet
+      AvailabilityZone: us-west-1a
+      IamInstanceProfile: !Ref MyInstanceProfile
+      SecurityGroupIds: 
+         - !Ref PingSG
 
 
   DefaultVpc:
@@ -33,10 +70,17 @@ Resources:
     Properties: 
       CidrBlock: 10.55.0.0/24
 
-  DefaultSubnet:
+  PublicSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       CidrBlock: 10.55.0.0/25
+      VpcId: !Ref DefaultVpc
+      AvailabilityZone: us-west-1a
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.55.0.128/25
       VpcId: !Ref DefaultVpc
       AvailabilityZone: us-west-1a
 
@@ -71,7 +115,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties: 
       RouteTableId: !Ref InternetGatewayRouteTable
-      SubnetId: !Ref DefaultSubnet
+      SubnetId: !Ref PublicSubnet
 
   DefaultInternetGatewayEIP:
     Type: AWS::EC2::EIP
@@ -89,7 +133,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 47.212.200.59/32
+          CidrIp: 173.19.144.189/32
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 10.55.0.0/24
       VpcId: !Ref DefaultVpc
 
   MyInstanceProfile: 
@@ -113,11 +161,61 @@ Resources:
                 - "ec2.amazonaws.com"
             Action: 
               - "sts:AssumeRole"
+  PolicyForCloudWatch: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "Cloudwatchinlineforlab5"
+      PolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+              - ec2:DescribeVolumes
+              - ec2:DescribeTags
+              - logs:PutLogEvents
+              - logs:DescribeLogStreams
+              - logs:DescribeLogGroups
+              - logs:CreateLogStream
+              - logs:CreateLogGroup
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource: arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*
+      Roles: 
+        - Ref: "RoleForCloudWatch"
 
+  EIP4NatGW:
+    Type: AWS::EC2::EIP
+
+  NatGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP4NatGW.AllocationId
+      SubnetId: !Ref PrivateSubnet
+
+  NATGatewayRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref DefaultVpc
+  
+  DefaultRouteToNatGW:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGW
+      RouteTableId: !Ref NATGatewayRouteTable
+  
+  DefaultRouteTableAssociationNATGW:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref NATGatewayRouteTable
+      SubnetId: !Ref PrivateSubnet
 
 Outputs:
   LinuxInstanceEIPOutput:
     Description: Public IPv4 address for the EIP that is attached to the linux instance
     Value: !Ref LinuxInstanceEIP
     Export:
-      Name: NameyMcNamerton
+      Name: LinuxInstanceEIP
