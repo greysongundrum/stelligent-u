@@ -1,0 +1,281 @@
+Description: Creating EC2 resources for lab 5.3.2
+Resources:
+  DefaultLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateData: 
+        InstanceType: t2.micro
+        KeyName: greysongundrumkeypair512
+      LaunchTemplateName: greysongundrumLT512
+      VersionDescription: 1
+
+  LinuxInstanceInPrivateSubnet:
+    Type: AWS::EC2::Instance
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DefaultLaunchTemplate
+        Version: 1
+      ImageId: ami-03f6d497fceb40069
+      SubnetId: !Ref PrivateSubnet
+      IamInstanceProfile: !Ref MyInstanceProfile
+      SecurityGroupIds: 
+         - !Ref PingSG
+      UserData: 
+        Fn::Base64: |
+          #!/bin/bash
+          curl -o /tmp/amazon-cloudwatch-agent.deb https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
+          dpkg -i -E /tmp/amazon-cloudwatch-agent.deb
+          amazon-cloudwatch-agent-ctl -a start
+
+  LinuxInstanceNoCloudWatchInstalled:
+    Type: AWS::EC2::Instance
+    Properties: 
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DefaultLaunchTemplate
+        Version: 1
+      ImageId: ami-03f6d497fceb40069
+      SubnetId: subnet-04c29693fb814239e
+
+      IamInstanceProfile: !Ref MyInstanceProfile
+      SecurityGroupIds: 
+         - !Ref PingSG
+
+  LinuxInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          full_install:
+          - install_and_enable_cfn_hup
+        install_and_enable_cfn_hup:
+          files:
+            "/etc/cfn/cfn-hup.conf":
+              content:
+                Fn::Join:
+                - ''
+                - - "[main]\n"
+                  - stack=
+                  - Ref: AWS::StackId
+                  - "\n"
+                  - region=
+                  - Ref: AWS::Region
+                  - "\n"
+              mode: '000400'
+              owner: root
+              group: root
+            "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
+              content:
+                Fn::Join:
+                - ''
+                - - "[cfn-auto-reloader-hook]\n"
+                  - 'triggers=post.update
+                    '
+                  - 'path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
+                    '
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - "         --stack "
+                  - Ref: AWS::StackName
+                  - "         --resource EC2Instance "
+                  - "         --configsets full_install "
+                  - "         --region "
+                  - Ref: AWS::Region
+                  - "\n"
+                  - 'runas=root
+                    '
+            "/lib/systemd/system/cfn-hup.service":
+              content:
+                Fn::Join:
+                - ''
+                - - "[Unit]\n"
+                  - "Description=cfn-hup daemon\n\n"
+                  - "[Service]\n"
+                  - 'Type=simple
+                    '
+                  - "\n"
+                  - 'ExecStart=/opt/aws/bin/cfn-hup
+                    '
+                  - "Restart=always\n\n"
+                  - "[Install]\n"
+                  - WantedBy=multi-user.target
+          commands:
+            01enable_cfn_hup:
+              command: systemctl enable cfn-hup.service
+            02start_cfn_hup:
+              command: systemctl start cfn-hup.service
+            03download_cwagent:
+              command: curl -o /tmp/amazon-cloudwatch-agent.deb https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
+            04install_cwagent:
+              command: dpkg -i -E /tmp/amazon-cloudwatch-agent.deb
+            05start_cw_service:
+              command: amazon-cloudwatch-agent-ctl -a start
+    Properties:
+      SubnetId: subnet-04c29693fb814239e
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+         - !Ref PingSG
+      KeyName: greysongundrumkeypair512
+      ImageId: ami-03f6d497fceb40069
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - 'apt-get update -y
+              '
+            - "\n"
+            - 'mkdir -p /opt/aws/bin
+              '
+            - "\n"
+            - 'wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+              '
+            - "\n"
+            - 'python3 -m easy_install --script-dir /opt/aws/bin aws-cfn-bootstrap-py3-latest.tar.gz
+              '
+            - "\n"
+            - "/opt/aws/bin/cfn-init -v "
+            - "         --stack "
+            - Ref: AWS::StackName
+            - "         --resource LinuxInstance "
+            - "         --configsets full_install "
+            - "         --region "
+            - Ref: AWS::Region
+            - "\n"
+            - "/opt/aws/bin/cfn-signal -e $? "
+            - "         --stack "
+            - Ref: AWS::StackName
+            - "         --resource LinuxInstance "
+            - "         --region "
+            - Ref: AWS::Region
+            - "\n"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT7M
+        Count: '1'
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 172.31.49.0/24
+      VpcId: vpc-074dab72545978117
+
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 172.31.50.0/24
+      VpcId: vpc-074dab72545978117
+
+
+  LinuxInstanceEIP:
+    Type: AWS::EC2::EIP
+
+  LinuxInstanceEIPAssoc:
+    Type: AWS::EC2::EIPAssociation
+    Properties: 
+      EIP: !Ref LinuxInstanceEIP
+      InstanceId: !Ref LinuxInstance
+
+  NoCloudWatchEIP:
+    Type: AWS::EC2::EIP
+    Properties: 
+      InstanceId: !Ref LinuxInstanceNoCloudWatchInstalled
+
+
+  PingSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Allow ping into instance.
+      SecurityGroupIngress: 
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 173.19.144.189/32
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 172.31.0.0/16
+      VpcId: vpc-074dab72545978117
+
+  MyInstanceProfile: 
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/"
+      Roles: 
+        - 
+          Ref: "RoleForCloudWatch"
+
+  RoleForCloudWatch: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+  PolicyForCloudWatch: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "Cloudwatchinlineforlab5"
+      PolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+              - ec2:DescribeVolumes
+              - ec2:DescribeTags
+              - logs:PutLogEvents
+              - logs:DescribeLogStreams
+              - logs:DescribeLogGroups
+              - logs:CreateLogStream
+              - logs:CreateLogGroup
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource: arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*
+      Roles: 
+        - Ref: "RoleForCloudWatch"
+
+  EIP4NatGW:
+    Type: AWS::EC2::EIP
+
+  NatGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP4NatGW.AllocationId
+      SubnetId: subnet-04c29693fb814239e
+
+  NATGatewayRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: vpc-074dab72545978117
+  
+  DefaultRouteToNatGW:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGW
+      RouteTableId: !Ref NATGatewayRouteTable
+  
+  DefaultRouteTableAssociationNATGW:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref NATGatewayRouteTable
+      SubnetId: !Ref PrivateSubnet
+
+Outputs:
+  LinuxInstanceEIPOutput:
+    Description: Public IPv4 address for the EIP that is attached to the linux instance
+    Value: !Ref LinuxInstanceEIP
+    Export:
+      Name: LinuxInstanceEIP
