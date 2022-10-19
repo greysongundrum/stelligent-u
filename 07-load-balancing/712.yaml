@@ -1,0 +1,187 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  DefaultVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnetCidr
+      VpcId: !Ref DefaultVPC
+      MapPublicIpOnLaunch: True
+      AvailabilityZoneId: usw2-az3
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnetCidr2
+      VpcId: !Ref DefaultVPC
+      MapPublicIpOnLaunch: True
+      AvailabilityZoneId: usw2-az2
+
+  SSHBastion:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI
+      SubnetId: !Ref PublicSubnet
+      KeyName: !Ref Keyname
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !Ref PingSG
+
+  SSHBastionEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref SSHBastion
+
+  PingSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Allow ping into instance.
+      SecurityGroupIngress: 
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref PublicHomeIP
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      VpcId: !Ref DefaultVPC
+
+  DefaultInternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  DefaultInternetGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref DefaultInternetGateway
+      VpcId: !Ref DefaultVPC
+
+  InternetGatewayRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref DefaultVPC
+
+  DefaultRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref InternetGatewayRouteTable
+      SubnetId: !Ref PublicSubnet
+      
+  DefaultRouteTableAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref InternetGatewayRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  WebServerAsg:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      DesiredCapacity: 2
+      HealthCheckType: 'ELB'
+      HealthCheckGracePeriod: 30 
+      LaunchConfigurationName: !Ref WebServersLC
+      MaxSize: 2
+      MinSize: 1
+      TargetGroupARNs:
+        - !Ref MyTargetGroup
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet
+        - !Ref PublicSubnet2
+    DependsOn: DefaultVPC
+
+  MyTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: instance
+      Port: 80
+      Protocol: HTTP
+      HealthCheckPath: "/index.html"
+      HealthCheckPort: "traffic-port"
+      HealthCheckProtocol: "HTTP"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+      Matcher: 
+          HttpCode: "200"
+      HealthCheckEnabled: true
+      VpcId: !Ref DefaultVPC
+
+  WebServersLC:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: 't2.micro'
+      KeyName: !Ref Keyname
+      SecurityGroups:
+        - !Ref 'PingSG'
+      UserData: 
+        Fn::Base64:
+          Fn::Sub: |
+            #!/bin/bash -xe
+            sudo amazon-linux-extras install -y nginx1
+            sudo service nginx start
+            sudo echo "<p>Automation for the People</p>" > /usr/share/nginx/html/index.html
+
+  greysongundrumLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets:
+      - !Ref PublicSubnet
+      - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref PingSG
+
+  greysongundrumALBLISTENER:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref MyTargetGroup
+      LoadBalancerArn: !Ref greysongundrumLB
+      Port: 80
+      Protocol: HTTP
+
+  EIP4NatGW:
+    Type: AWS::EC2::EIP
+
+  NatGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP4NatGW.AllocationId
+      SubnetId: !Ref PublicSubnet
+
+  Route2IG:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref InternetGatewayRouteTable
+      NatGatewayId: !Ref NatGW
+      DestinationCidrBlock: 0.0.0.0/0
+
+
+Parameters:
+  AMI:
+    Type: String
+  Keyname:
+    Type: String 
+  PublicHomeIP:
+    Type: String
+  VPCCidr:
+    Type: String
+  PublicSubnetCidr:
+    Type: String
+  PublicSubnetCidr2:
+    Type: String
