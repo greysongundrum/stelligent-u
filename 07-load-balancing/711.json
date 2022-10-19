@@ -1,0 +1,26 @@
+[
+    {
+        "ParameterKey":"AMI",
+        "ParameterValue":"ami-08e2d37b6a0129927"
+    },
+    {
+        "ParameterKey":"Keyname",
+        "ParameterValue":"greysongundrumkeypair512"
+    },
+    {
+        "ParameterKey":"PublicHomeIP",
+        "ParameterValue":"173.19.144.189/32"
+    },
+    {
+        "ParameterKey":"VPCCidr",
+        "ParameterValue":"10.1.0.0/23"
+    },
+    {
+        "ParameterKey":"PublicSubnetCidr",
+        "ParameterValue":"10.1.0.0/24"
+    },
+    {
+        "ParameterKey":"PublicSubnetCidr2",
+        "ParameterValue":"10.1.1.0/24"
+    }
+]
