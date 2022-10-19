@@ -10,7 +10,7 @@ Resources:
     Properties:
       CidrBlock: !Ref PublicSubnetCidr
       VpcId: !Ref DefaultVPC
-      AvailabilityZoneId: usw2-az1
+      AvailabilityZoneId: usw2-az3
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -22,16 +22,14 @@ Resources:
   SSHBastion:
     Type: AWS::EC2::Instance
     Properties:
-      KeyName: greysongundrumkeypair711
       ImageId: !Ref AMI
       SubnetId: !Ref PublicSubnet
+      KeyName: !Ref Keyname
       SecurityGroupIds:
         - !Ref PingSG
 
   SSHBastionEIP:
     Type: AWS::EC2::EIP
-    Properties:
-      InstanceId: !Ref SSHBastion
 
   PingSG:
     Type: AWS::EC2::SecurityGroup
@@ -94,6 +92,8 @@ Resources:
 
   DefaultInternetGatewayEIP:
     Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref SSHBastion
 
 
   WebServerAsg:
