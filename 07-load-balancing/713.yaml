@@ -70,6 +70,21 @@ Resources:
       LoadBalancerArn: !Ref greysongundrumLB
       Port: 80
       Protocol: HTTP
+  
+
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref MyTargetGroup
+      LoadBalancerArn: !Ref greysongundrumLB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+      - CertificateArn: >-
+          arn:aws:acm:us-west-2:324320755747:certificate/8babaf7a-7335-4732-8f5a-0da9fa9b6ea3
+      SslPolicy: ELBSecurityPolicy-FS-1-1-2019-08
 
 Parameters:
   AMI:

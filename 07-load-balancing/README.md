@@ -66,6 +66,8 @@ many instances with an ALB.
 _What is the benefit of breaking up the load balancer into specific listeners
 and target groups?_
 
+It allows you to route traffic based on what port/application needs it. 
+
 #### Lab 7.1.2: Health Checks
 
 Now, let's update our health check to see what happens when things go
@@ -89,9 +91,13 @@ haywire!
 _What can be controlled with the interval/healthy threshold/unhealthy threshold
 settings?_
 
+The amount of consecuctive checks that can be healthy or unhealthy before considering the target group healthy or unhealthy. 
+
 ##### Question: ASG Behavior
 
 _What's happening to the instances in the ASG? How do you know?_
+
+The target groups are all unhealthy, and are getting replaced. You can see this in the target group console section. 
 
 #### Lab 7.1.3: Secure Sockets
 
@@ -119,10 +125,18 @@ Let's fix that bad health check endpoint and add an https listener.
 
 _What is the trade off of going with a more secure SSL policy?_
 
+Compatibility and overheard for more security.
+
 ##### Question: Certificate Management
 
 _We imported a local certificate into ACM, what other options do you have? How
 do those processes work?_
+
+Request a certificate, and Create a private CA. 
+
+Request a public certificate you need to generate a CSR, and submit it. Then you need to provide proof of ownership for the domain. This is done in different ways including an e-mail to the owner of the domain listed on the sysdig info, or changing the SPF record to a pre shared key.
+
+A private ca lets you set up your own CA on AWS. This start with a self signed cert authority. In the process of setting this up you need to add revocation permissions to revoke certs. 
 
 #### Lab 7.1.4: Cleanup
 

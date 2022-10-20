@@ -13,7 +13,7 @@
     },
     {
         "ParameterKey":"VPCCidr",
-        "ParameterValue":"10.1.0.0/22"
+        "ParameterValue":"10.1.0.0/23"
     },
     {
         "ParameterKey":"PublicSubnetCidr",

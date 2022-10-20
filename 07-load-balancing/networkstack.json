@@ -16,11 +16,15 @@
         "ParameterValue":"10.1.0.0/22"
     },
     {
-        "ParameterKey":"PublicSubnetCidr",
+        "ParameterKey":"PublicSubnetCidr1",
         "ParameterValue":"10.1.0.0/24"
     },
     {
         "ParameterKey":"PublicSubnetCidr2",
         "ParameterValue":"10.1.1.0/24"
+    },
+    {
+        "ParameterKey":"PublicSubnetCidr3",
+        "ParameterValue":"10.1.2.0/24"
     }
 ]
