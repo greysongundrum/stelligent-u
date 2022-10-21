@@ -4,7 +4,7 @@
         "ParameterValue":"ami-08e2d37b6a0129927"
     },
     {
-        "ParameterKey":"Keyname",
+        "ParameterKey":"KeyName",
         "ParameterValue":"greysongundrumkeypair711"
     },
     {
