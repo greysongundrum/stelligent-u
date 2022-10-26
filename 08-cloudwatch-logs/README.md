@@ -94,6 +94,8 @@ repo:
 
 > *Note:* logs may take several minutes to appear.
 
+aws logs get-log-events --log-group-name greysongundrumlabsc9logs --log-stream-name c9training
+
 #### Lab 8.1.3: 3rd party tool awslogs
 
 [awslogs](https://github.com/jorgebastida/awslogs) is a
@@ -121,6 +123,37 @@ lifecycle of the logs.
 - Set the retention policy to the maximum allowed time, and review the
   change again to double-check.
 
+
+greyson.gundrum@MACUSSTG2541764 08-cloudwatch-logs % aws logs put-retention-policy --log-group-name greysongundrumlabsc9logs --retention-in-days 60      
+greyson.gundrum@MACUSSTG2541764 08-cloudwatch-logs % aws logs get-retention-policy --log-group-name greysongundrumlabsc9logs                    
+
+greyson.gundrum@MACUSSTG2541764 08-cloudwatch-logs % aws logs describe-log-groups --log-group-name greysongundrumlabsc9logs 
+{
+    "logGroups": [
+        {
+            "logGroupName": "greysongundrumlabsc9logs",
+            "creationTime": 1666757569875,
+            "retentionInDays": 60,
+            "metricFilterCount": 0,
+            "arn": "arn:aws:logs:us-west-2:324320755747:log-group:greysongundrumlabsc9logs:*",
+            "storedBytes": 0
+        }
+    ]
+}
+greyson.gundrum@MACUSSTG2541764 08-cloudwatch-logs % aws logs describe-log-groups --log-group-name greysongundrumlabsc9logs 
+{
+    "logGroups": [
+        {
+            "logGroupName": "greysongundrumlabsc9logs",
+            "creationTime": 1666757569875,
+            "retentionInDays": 3653,
+            "metricFilterCount": 0,
+            "arn": "arn:aws:logs:us-west-2:324320755747:log-group:greysongundrumlabsc9logs:*",
+            "storedBytes": 0
+        }
+    ]
+}
+
 #### Lab 8.1.5: Clean up
 
 You can tear down your EC2 stack at this point.
@@ -140,8 +173,12 @@ limitations are.*
 
 - What are the minimum and maximum retention times?
 
+1 Day or 10 years (Or Never Expire)
+
 - Instead of keeping data in CW Logs forever, can you do anything else
   with them? What might a useful lifecycle for logs look like?
+
+  You could move them to glacier after an immiedate name from them had ceased to existed. It's likely that after a time these logs are bundled and shipped to S3.
 
 ## Lesson 8.2: CloudWatch Logs with CloudTrail events
 

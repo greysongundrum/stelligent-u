@@ -1,0 +1,198 @@
+Description: Creating EC2 resources for lab 8.1.2
+Resources:
+  LinuxInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          full_install:
+          - install_and_enable_cfn_hup
+        install_and_enable_cfn_hup:
+          files:
+            /tmp/cwlogs/apacheaccess.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [general]
+                  - |
+                    state_file= /var/awslogs/agent-state
+                  - |
+                    [/var/log/httpd/access_log]
+                  - |
+                    file = /var/log/httpd/access_log
+                  - 'log_group_name = '
+                  - !Ref WebServerLogGroup
+                  - |+
+
+                  - |
+                    log_stream_name = {instance_id}/apache.log
+                  - 'datetime_format = %d/%b/%Y:%H:%M:%S'
+            "/etc/cfn/cfn-hup.conf":
+              content:
+                Fn::Join:
+                - ''
+                - - "[main]\n"
+                  - stack=
+                  - Ref: AWS::StackId
+                  - "\n"
+                  - region=
+                  - Ref: AWS::Region
+                  - "\n"
+              mode: '000400'
+              owner: root
+              group: root
+            "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
+              content:
+                Fn::Join:
+                - ''
+                - - "[cfn-auto-reloader-hook]\n"
+                  - 'triggers=post.update
+                    '
+                  - 'path=Resources.EC2Instance.Metadata.AWS::CloudFormation::Init
+                    '
+                  - 'action=/opt/aws/bin/cfn-init -v '
+                  - "         --stack "
+                  - Ref: AWS::StackName
+                  - "         --resource EC2Instance "
+                  - "         --configsets full_install "
+                  - "         --region "
+                  - Ref: AWS::Region
+                  - "\n"
+                  - 'runas=root
+                    '
+            "/lib/systemd/system/cfn-hup.service":
+              content:
+                Fn::Join:
+                - ''
+                - - "[Unit]\n"
+                  - "Description=cfn-hup daemon\n\n"
+                  - "[Service]\n"
+                  - 'Type=simple
+                    '
+                  - "\n"
+                  - 'ExecStart=/opt/aws/bin/cfn-hup
+                    '
+                  - "Restart=always\n\n"
+                  - "[Install]\n"
+                  - WantedBy=multi-user.target
+          commands:
+            01enable_cfn_hup:
+              command: systemctl enable cfn-hup.service
+            02start_cfn_hup:
+              command: systemctl start cfn-hup.service
+            03download_cwagent:
+              command: curl -o /tmp/amazon-cloudwatch-agent.deb https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb
+            04install_cwagent:
+              command: dpkg -i -E /tmp/amazon-cloudwatch-agent.deb
+            05install_aws_cli: 
+              command: snap install aws-cli --classic
+            06copy_config_down:
+              command: aws s3 cp s3://greysongundrumcloudtrailconfigbucket/config.json /opt/aws/amazon-cloudwatch-agent/amazon-cloudwatch-agent.json
+            07start_cw_service:
+              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/amazon-cloudwatch-agent.json -s
+    Properties:
+      IamInstanceProfile: !Ref MyInstanceProfile
+      SubnetId: !ImportValue greysongundrumnetworkstack-PublicSubnet1
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+         - !ImportValue greysongundrumnetworkstack-PingSG
+      KeyName: !Ref KeyName
+      ImageId: !Ref AMI
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - 'apt-get update -y
+              '
+            - "\n"
+            - 'mkdir -p /opt/aws/bin
+              '
+            - "\n"
+            - 'wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+              '
+            - "\n"
+            - 'python3 -m easy_install --script-dir /opt/aws/bin aws-cfn-bootstrap-py3-latest.tar.gz
+              '
+            - "\n"
+            - "/opt/aws/bin/cfn-init -v "
+            - "         --stack "
+            - Ref: AWS::StackName
+            - "         --resource LinuxInstance "
+            - "         --configsets full_install "
+            - "         --region "
+            - Ref: AWS::Region
+            - "\n"
+            - "/opt/aws/bin/cfn-signal -e $? "
+            - "         --stack "
+            - Ref: AWS::StackName
+            - "         --resource LinuxInstance "
+            - "         --region "
+            - Ref: AWS::Region
+            - "\n"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT7M
+        Count: '1'
+
+  MyInstanceProfile: 
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/"
+      Roles: 
+        - 
+          Ref: "RoleForCloudWatch"
+
+  RoleForCloudWatch: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+  PolicyForCloudWatch: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "CloudWatchandS3"
+      PolicyDocument: 
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudwatch:PutMetricData
+              - ec2:DescribeVolumes
+              - ec2:DescribeTags
+              - logs:PutLogEvents
+              - logs:DescribeLogStreams
+              - logs:DescribeLogGroups
+              - logs:CreateLogstream
+              - logs:Create
+              - logs:Create*
+              - s3:*
+              - s3-object-lambda:*
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource: arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*
+      Roles: 
+        - Ref: "RoleForCloudWatch"
+
+
+Parameters:
+  AMI:
+    Type: String
+  KeyName:
+    Type: String 
+  WebServerLogGroup:
+    Type: String
+Outputs:
+  GGVPC:
+    Description: The ID of the VPC
+    Value: !GetAtt LinuxInstance.PublicIp
