@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey":"AMI",
+        "ParameterValue":"ami-0c09c7eb16d3e8e70"
+    },
+    {
+        "ParameterKey":"KeyName",
+        "ParameterValue":"greysongundrumkeypair812"
+    },
+    {
+        "ParameterKey":"WebServerLogGroup",
+        "ParameterValue":"greyson.gundrum.labs.c9logs"
+    }
+]

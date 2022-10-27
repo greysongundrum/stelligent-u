@@ -1,0 +1,22 @@
+Description: Creating EC2 resources for lab 8.2.2
+Resources:
+  myEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: greysongundrumkeypair812
+      ImageId: ami-0c09c7eb16d3e8e70
+      InstanceType: t2.micro
+      SecurityGroupIds: 
+      - !ImportValue greysongundrumnetworkstack-PingSG
+      SubnetId: !ImportValue greysongundrumnetworkstack-PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: GREYSONGUNDRUMBESTINSTANCEINTHEWHORLD
+        - Key: User
+          Value: greyson.gundrum.labs 
+        - Key: Purpose
+          Value: Stelligent-U
+        - Key: Topic
+          Value: 'Logging AWS infrastructure changes'
+        - Key: Lab
+          Value: 8.2.2
