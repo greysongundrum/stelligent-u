@@ -56,9 +56,15 @@ Use the AWS KMS CLI to encrypt a plaintext file with a secret message
 (maybe that combo to the safe, or your luggage password). Send your file
 to a colleague with administrator access.
 
+aws kms encrypt --key-id alias/mcsnazzyalias --plaintext fileb://supersecret.txt --output text --region us-west-2 > ./encryptedsueprsecretfile.txt
+cat Encrypteddatafile.base64 | base64 --decode > Encrypteddatafile
+
 #### Lab 10.1.4: Decrypt a ciphertext file
 
 Use the KMS CLI to now decrypt a ciphertext file.
+
+aws kms decrypt --ciphertext-blob fileb://Encrypteddatafile   --output text --query Plaintext  > Decrypteddatafile.base64
+cat Decrypteddatafile.base64 | base64 --decode  > Decrypteddatafile.txt
 
 ### Retrospective 10.1
 
