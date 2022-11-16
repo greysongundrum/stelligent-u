@@ -1,0 +1,10 @@
+Resources:
+  greysongundrumCFbucket2:
+    Type: AWS::S3::Bucket
+    Properties: 
+      BucketName: greysongundrumcfbucket2
+Outputs:
+  S3Bucket:
+    Export:
+      Name: GreysonGundrumS3Bucket2
+    Value: !Ref greysongundrumCFbucket2

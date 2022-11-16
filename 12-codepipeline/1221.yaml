@@ -1,0 +1,15 @@
+Resources:
+  DynamiteDynamoTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      KeySchema:
+        -
+          AttributeName: Tacos
+          KeyType: HASH
+      AttributeDefinitions:
+        -
+          AttributeName: Tacos
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
