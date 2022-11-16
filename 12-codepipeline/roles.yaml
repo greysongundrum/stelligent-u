@@ -55,6 +55,15 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      Policies:
+        - PolicyName: CodestartConnectionPolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action: codestar-connections:*
+              Resource: "*"
 
 Outputs:
   DynamoDbRole:

@@ -48,7 +48,7 @@
                 ActionMode: CHANGE_SET_REPLACE
                 ChangeSetName: pipeline-changeset
                 StackName: greysongundrumDYNAMODB-BABY
-                TemplatePath: SourceOutputArtifact::1211.yaml
+                TemplatePath: SourceOutputArtifact::1221.yaml
                 RoleArn: !ImportValue GreysonGundrumCloudFormationRole
               InputArtifacts:
                 -
@@ -82,6 +82,6 @@
                 Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
                 ActionMode: CHANGE_SET_EXECUTE
                 ChangeSetName: pipeline-changeset
-                StackName: greysongundrumbabybucket
-                TemplatePath: ChangeSetCreateComplete::1211.yaml
+                StackName: greysongundrumDYNAMODB-BABY
+                TemplatePath: ChangeSetCreateComplete::1221.yaml
                 RoleArn: !ImportValue GreysonGundrumCloudFormationRole
