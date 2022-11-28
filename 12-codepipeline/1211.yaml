@@ -125,8 +125,8 @@ Resources:
   GithubConnection:
     Type: AWS::CodeStarConnections::Connection
     Properties: 
-      ConnectionName: "greysongundrumgithuconnection"
-      ProviderType: GitHub
+      ConnectionName: "greysongundrumgithubconnection"
+      ProviderType: GitHub 
 
   TheOnePipeLineToRulThemAll2:  
     Type: AWS::CodePipeline::Pipeline
