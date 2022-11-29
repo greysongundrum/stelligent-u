@@ -11,7 +11,7 @@ Resources:
       CidrBlock: !Ref PublicSubnetCidr1
       VpcId: !Ref GGVPC
       MapPublicIpOnLaunch: True
-      AvailabilityZoneId: usw2-az1
+      AvailabilityZoneId: usw1-az1
       Tags:
         - Key: Name
           Value: PublicSubnet1
@@ -22,7 +22,7 @@ Resources:
       CidrBlock: !Ref PublicSubnetCidr2
       VpcId: !Ref GGVPC
       MapPublicIpOnLaunch: True
-      AvailabilityZoneId: usw2-az2
+      AvailabilityZoneId: usw1-az2
       Tags:
         - Key: Name
           Value: PublicSubnet2
@@ -33,7 +33,7 @@ Resources:
       CidrBlock: !Ref PublicSubnetCidr3
       VpcId: !Ref GGVPC
       MapPublicIpOnLaunch: True
-      AvailabilityZoneId: usw2-az3
+      AvailabilityZoneId: usw1-az3
       Tags:
         - Key: Name
           Value: PublicSubnet3
