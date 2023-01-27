@@ -1,0 +1,81 @@
+Resources:
+  DynamoDbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - dynamodb.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/IAMFullAccess
+      Policies:
+        - PolicyName: CodestartConnectionPolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action: codestar-connections:*
+              Resource: "*"
+
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+                - cloudformation.amazonaws.com 
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+      Policies:
+        - PolicyName: CodestartConnectionPolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action: codestar-connections:*
+              Resource: "*"
+
+Outputs:
+  DynamoDbRole:
+    Export:
+      Name: GreysonGundrumDynamoDbRole
+    Value: !GetAtt DynamoDbRole.Arn
+  CodePipeLineRole:
+    Export:
+      Name: GreysonGundrumCodePipelineRole
+    Value: !GetAtt CodePipelineRole.Arn
+  CloudFormationRole:
+    Export:
+      Name: GreysonGundrumCloudFormationRole
+    Value: !GetAtt CloudFormationRole.Arn
+

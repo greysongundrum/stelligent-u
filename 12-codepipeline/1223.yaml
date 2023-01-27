@@ -1,0 +1,87 @@
+ Resources: 
+  GithubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties: 
+      ConnectionName: "greysongundrumgithuconnection"
+      ProviderType: GitHub
+
+  GreysonGundrumDynamoDbPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties: 
+      ArtifactStore: 
+        Location: !ImportValue GreysonGundrumS3Bucket2
+        Type: S3
+      Name: DynamoDbPipeLine
+      RoleArn: !ImportValue GreysonGundrumCodePipelineRole
+      Stages:
+        - 
+          Name: Source
+          Actions:
+            -
+              Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeStarSourceConnection
+              OutputArtifacts: 
+                -
+                  Name: SourceOutputArtifact
+              RunOrder: 1
+              Configuration:
+                ConnectionArn: !Ref GithubConnection
+                FullRepositoryId: greysongundrum/sameappmodule12
+                BranchName: main
+        -
+          Name: BuildChangeSet
+          Actions:
+            -
+              Name: BuildChangeSetAction
+              ActionTypeId: 
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              RunOrder: 2
+              Configuration:
+                Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: pipeline-changeset
+                StackName: greysongundrumDYNAMODB-BABY
+                TemplatePath: SourceOutputArtifact::1221.yaml
+                RoleArn: !ImportValue GreysonGundrumCloudFormationRole
+              InputArtifacts:
+                -
+                  Name: SourceOutputArtifact
+              OutputArtifacts:
+                -
+                  Name: ChangeSetCreateComplete
+        -
+          Name: ApproveChangeSet
+          Actions:
+            -
+              Name: ApproveChangeSetAction
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: "1"
+                Provider: Manual
+              RunOrder: 3
+        -
+          Name: ExecuteChangeSet
+          Actions:
+            -
+              Name: ExecuteChangeSetAction
+              ActionTypeId: 
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              RunOrder: 4
+              Configuration:
+                Capabilities: CAPABILITY_NAMED_IAM,CAPABILITY_AUTO_EXPAND
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: pipeline-changeset
+                StackName: greysongundrumDYNAMODB-BABY
+                TemplatePath: ChangeSetCreateComplete::1221.yaml
+                RoleArn: !ImportValue GreysonGundrumCloudFormationRole

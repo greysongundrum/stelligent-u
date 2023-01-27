@@ -1,0 +1,265 @@
+Resources:
+  CodeCommitRepo:
+    Type: AWS::CodeCommit::Repository
+    Properties: 
+      RepositoryDescription: "Greyson Gundrum Code Repo for Module 12"
+      RepositoryName: "greysongundrummodule12repo"
+      Code:
+        BranchName: main
+        S3: 
+          Bucket: greysongundrumgeneralsubucket
+          Key: SampleApp_Linux.zip
+
+  CodeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+      - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+      - arn:aws:iam::aws:policy/IAMFullAccess
+      - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+      - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+      - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - codedeploy.amazonaws.com
+                - codepipeline.amazonaws.com
+                - codecommit.amazonaws.com
+                - s3.amazonaws.com
+                - codestar.amazonaws.com
+                - cloudformation.amazonaws.com
+                - lambda.amazonaws.com
+                - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CodestartConnectionPolicy
+          PolicyDocument:
+            Statement:
+              Effect: Allow
+              Action: codestar-connections:*
+              Resource: "*"
+  
+  CodeDeployInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: 
+      - !Ref CodeDeployRole
+
+  MyCodePipelineDemo:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        services:
+          sysvint:
+            codedeploy-agent:
+              enabled: 'true'
+              ensureRunning: 'true'
+    Properties: 
+      IamInstanceProfile: !Ref CodeDeployInstanceProfile
+      ImageId: ami-0d593311db5abb72b
+      KeyName: greysongundrumkeypair812
+      SecurityGroupIds: 
+        - !ImportValue greysongundrumnetworkstack-PingSG
+      UserData:
+        Fn::Base64:
+          Fn::Join: 
+          - ''
+          - - "#!/bin/bash -ex\n"
+            - "/opt/aws/bin/cfn-init -s "
+            - Ref: AWS::StackId
+            - " -r MyCodePipelineDemo --region "
+            - Ref: AWS::Region
+            - " || error_exit 'Failed to run cfn-init.'\n"
+            - "# All is well, so signal success.\n"
+            - /opt/aws/bin/cfn-signal -e 0 -r "AWS CodeDeploy Agent setup complete."
+              '
+            - Ref: WaitHandle
+            - "'\n"
+      SubnetId: !ImportValue greysongundrumnetworkstack-PublicSubnet1
+      Tags: 
+       - Key: Name
+         Value: MyCodePipelineDemo  
+
+  WaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Count: 1
+      Handle: !Ref WaitHandle
+      Timeout: '300'
+
+
+  MyDemoApp:
+    Type: AWS::CodeDeploy::Application
+    Properties: 
+      ApplicationName: MyDemoApp
+      ComputePlatform: Server
+
+
+
+  MyDemoDeploymentgroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties: 
+      ApplicationName: MyDemoApp
+      DeploymentGroupName: CFMyDemoDeploymentgroup
+      DeploymentConfigName: CodeDeployDefault.OneAtATime
+      DeploymentStyle: 
+        DeploymentType: IN_PLACE
+        DeploymentOption: WITHOUT_TRAFFIC_CONTROL
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+      Ec2TagFilters:
+       - Type: KEY_AND_VALUE
+         Key: Name
+         Value: MyCodePipelineDemo
+
+  GithubConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties: 
+      ConnectionName: "greysongundrumgithuconnection"
+      ProviderType: GitHub
+
+  BuildCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: cfn-valdiate
+      ServiceRole: !GetAtt CodeDeployRole.Arn
+      Environment: 
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+      Artifacts: 
+        Type: CODEPIPELINE
+      Source: 
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              commands:
+            pre_build:
+              commands:
+            build:
+              commands:
+                - aws cloudformation validate-template --template-body file://bucket.yaml
+
+  TestCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: HealthCheck
+      ServiceRole: !GetAtt CodeDeployRole.Arn
+      Environment: 
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+      Artifacts: 
+        Type: CODEPIPELINE
+      Source: 
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              commands:
+            pre_build:
+              commands:
+              build:
+            commands:
+              - stackstatus=$(aws cloudformation describe-stacks --stack-name greysongundrum1211babybucketstack --query 'Stacks[*].StackStatus' | grep -v "\[" | grep -v "\]")
+              - echo $stackstatus
+              - |
+                if [ $stackstatus = \"CREATE_COMPLETE\" ] ; then echo $stackstatus && echo $expected_status && echo "EXIT 0" && exit 0 ; else echo $stackstatus && echo $expected_status && echo "EXIT 1" && exit 1; fi
+
+        
+
+
+  TheOnePipeLineToRulThemAll2:  
+    Type: AWS::CodePipeline::Pipeline
+    Properties: 
+      ArtifactStore: 
+        Type: S3
+        Location: greysongundrumgeneralsubucket
+      Name: TheOnePipeLineToRulThemAll
+      RoleArn: !GetAtt CodeDeployRole.Arn
+      Stages:
+        - 
+          Name: Source
+          Actions:
+            -
+              Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: "1"
+                Provider: CodeStarSourceConnection
+              OutputArtifacts:
+                -
+                  Name: SourceOutputArtifact
+              Configuration:
+                ConnectionArn: !Ref GithubConnection
+                BranchName: "main"
+                FullRepositoryId: "greysongundrum/sameappmodule12"
+        -
+          Name: Build
+          Actions:
+            -
+              Name: BuildAction
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref BuildCodeBuildProject
+              InputArtifacts:
+                -
+                  Name: SourceOutput
+        -
+          Name: Test
+          Actions:
+            -
+              Name: TestAction
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: "1"
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref BuildCodeBuildProject
+              InputArtifacts:
+                -
+                  Name: SourceOutput
+        - 
+          Name: Deploy 
+          Actions: 
+            - 
+              Name: DeployAction
+              InputArtifacts: 
+                - 
+                  Name: SourceOutput 
+              ActionTypeId: 
+                Category: Deploy 
+                Owner: AWS 
+                Version: "1"
+                Provider: CloudFormation 
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                StackName: greysongundrum1211babybucketstack
+                Capabilities: CAPABILITY_IAM,CAPABILITY_NAMED_IAM 
+                RoleArn: !GetAtt CodeDeployRole.Arn
+                TemplatePath: SourceOutput::bucket.yaml
+                TemplateConfiguration: SourceOutput::bucket.json
+              RunOrder: 1
+
+
+
+
