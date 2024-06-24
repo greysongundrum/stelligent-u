@@ -1,0 +1,7 @@
+  Description: 'CFN Template for 1.2.3'
+  Resources: 
+    S3ArnReadUser:
+      Type: AWS::IAM::User
+      Properties:
+        UserName: newusergreysongundrumfreshontheblock
+        ManagedPolicyArns: [Fn::ImportValue: DisplayArn]

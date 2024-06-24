@@ -1,0 +1,69 @@
+  Description: 'CFN Template for 1.2'
+  Parameters:
+    S3User:
+      Type: String
+      Default: defaultgreysongundrum
+  Resources: 
+    S3ReadUser:
+      Type: AWS::IAM::User
+      Properties:
+        UserName: !Ref S3User
+    S3ReadPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      DependsOn: S3ReadUser
+      Properties:
+        ManagedPolicyName: "s3readaccessonly"
+        Users: 
+          - !Ref S3User
+        PolicyDocument: 
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:  
+                - 's3:GetLifecycleConfiguration'
+                - 's3:GetBucketTagging'
+                - 's3:GetInventoryConfiguration'
+                - 's3:GetAccessPointPolicyForObjectLambda'
+                - 's3:GetBucketLogging'
+                - 's3:GetAccelerateConfiguration'
+                - 's3:GetBucketPolicy'
+                - 's3:GetStorageLensConfigurationTagging'
+                - 's3:GetEncryptionConfiguration'
+                - 's3:GetBucketObjectLockConfiguration'
+                - 's3:GetIntelligentTieringConfiguration'
+                - 's3:GetBucketRequestPayment'
+                - 's3:GetAccessPointPolicyStatus'
+                - 's3:GetMetricsConfiguration'
+                - 's3:GetBucketOwnershipControls'
+                - 's3:GetBucketPublicAccessBlock'
+                - 's3:GetBucketPolicyStatus'
+                - 's3:GetBucketWebsite'
+                - 's3:GetJobTagging'
+                - 's3:GetAccessPointPolicyStatusForObjectLambda'
+                - 's3:GetBucketVersioning'
+                - 's3:GetBucketAcl'
+                - 's3:GetAccessPointConfigurationForObjectLambda'
+                - 's3:GetBucketNotification'
+                - 's3:DescribeMultiRegionAccessPointOperation'
+                - 's3:GetReplicationConfiguration'
+                - 's3:GetStorageLensConfiguration'
+                - 's3:DescribeJob'
+                - 's3:GetBucketCORS'
+                - 's3:GetAnalyticsConfiguration'
+                - 's3:GetBucketLocation'
+                - 's3:GetAccessPointPolicy'
+                - 's3:GetAccessPointForObjectLambda'
+                - 's3:GetStorageLensDashboard'
+              Resource:
+                - 'arn:aws:s3:*:324320755747:job/*'
+                - 'arn:aws:s3:::*'
+                - 'arn:aws:s3:us-west-2:324320755747:async-request/mrap/*/*'
+                - 'arn:aws:s3-object-lambda:*:324320755747:accesspoint/*'
+                - 'arn:aws:s3:*:324320755747:storage-lens/*'
+                - 'arn:aws:s3:*:324320755747:accesspoint/*'
+  Outputs:
+    DisplayArn:
+      Description: Shows ARN for IAM resource
+      Value: !Ref S3ReadPolicy
+      Export: 
+        Name: DisplayArn

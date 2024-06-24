@@ -1,0 +1,18 @@
+  Description: 'Create a bucket for lab 1.1.1'
+  Conditions:
+    uswest1orna:  !Equals
+      - !Ref AWS::Region
+      - us-west-1
+  Resources:
+    ggS3Bucket:
+      Type: 'AWS::S3::Bucket'
+      Properties:
+        BucketName:
+          'Fn::If':
+          - uswest1orna
+          - !Sub '${AWS::AccountId}greysongundrumbucket'
+          - !Sub '${AWS::Region}greysongundrumbucket'
+  Parameters:
+    nameofthebucket:
+      Type: String
+      Default: greysongundrumdefaultbucketname
