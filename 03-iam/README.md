@@ -92,6 +92,11 @@ Create a CFN template that specifies an IAM Role.
   - List all the Roles
   - Describe the specific Role your Stack created.
 
+aws iam list-roles
+aws iam list-roles --region us-west-1  
+aws iam list-roles --region us-west-1 | grep -i IAMReadonly
+aws iam get-role --role-name greysongundrumlab311-IAMReadonly-1G2C9CVER7D5O
+
 #### Lab 3.1.2: Customer Managed Policy
 
 Update the template and the corresponding Stack to make the IAM Role's
@@ -115,12 +120,14 @@ policy:
 - Attach the customer managed policy resource to the new role.
 
 - Be sure that you're not referencing an AWS managed policy in the
-  role.
+  role. 
 
 - Add/Update the Description of the customer managed policy to
   indicate the re-use of the policy.
 
 - Update the Stack. *Did the stack update work?*
+
+Yes the update worked great. 
 
   - Query the stack to determine its state.
   - If the stack update was not successful,
@@ -139,21 +146,6 @@ Replace the customer managed policy with
   Read permissions to the EC2 service.
 
 - Update the stack.
-
-#### Lab 3.1.5: Policy Simulator
-
-Read about the [AWS Policy Simulator](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_testing-policies.html)
-tool and practice using it.
-
-- Using the two roles in your stack, simulate the ability of each role
-  to perform the following actions (using the AWS CLI):
-
-  - `iam:CreateRole`
-  - `iam:ListRoles`
-  - `iam:SimulatePrincipalPolicy`
-  - `ec2:DescribeImages`
-  - `ec2:RunInstances`
-  - `ec2:DescribeSecurityGroups`
 
 #### Lab 3.1.6: Clean Up
 
@@ -229,6 +221,9 @@ Test the capabilities of this new Role.
   - Did it succeed? It should not have!
   - If it succeeded, troubleshoot how Read access allowed the role
     to create a bucket.
+greyson.gundrum@MACUSSTG2541764 03-iam % aws s3api create-bucket --bucket stelligent-u-greyson-gundrum-labs-bucket --region=us-west-2 --create-bucket-configuration LocationConstraint=us-west-2
+
+An error occurred (AccessDenied) when calling the CreateBucket operation: Access Denied
 
 #### Lab 3.2.3: Add privileges to the role
 
@@ -322,7 +317,11 @@ read-only access to the other.
 
 *Were there any errors? If so, take note of them.*
 
+Yes, it appears as if you can not have two policies. They last one overrides the first one. 
+
 *What were the results you expected, based on the role's policy?*
+
+I had expected to have full control of one bucket and read only on the other bucket. 
 
 #### Lab 3.3.3: Conditional restrictions
 
